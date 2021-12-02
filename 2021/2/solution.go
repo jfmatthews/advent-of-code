@@ -87,6 +87,8 @@ func extractRegexp(pattern *regexp.Regexp, str string) (*parsedParams, error) {
 				return nil, err
 			}
 			params.Numbers[name[1:]] = num
+		} else {
+			return nil, fmt.Errorf("unknown parse type for capture group %s", name)
 		}
 	}
 

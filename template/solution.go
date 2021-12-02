@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 )
 
 type scanner struct {
@@ -56,18 +57,39 @@ func main() {
 }
 
 var (
-	inputFormat = regexp.MustCompile("(?P<Data>.*)")
+	inputFormat = regexp.MustCompile("(?P<sData>.*)")
 )
 
-func extractRegexp(pattern *regexp.Regexp, str string) (map[string]string, error) {
-	params := make(map[string]string)
+type parsedParams struct {
+	FullMatch string
+	Strings   map[string]string
+	Numbers   map[string]int
+}
+
+func extractRegexp(pattern *regexp.Regexp, str string) (*parsedParams, error) {
+	params := &parsedParams{
+		Strings: make(map[string]string),
+		Numbers: make(map[string]int),
+	}
 
 	subMatches := pattern.FindStringSubmatch(str)
 	if len(subMatches) != len(pattern.SubexpNames()) {
 		return nil, fmt.Errorf("%s does not match pattern %s", str, pattern)
 	}
 	for i, name := range pattern.SubexpNames() {
-		params[name] = subMatches[i]
+		if name == "" {
+			params.FullMatch = subMatches[i]
+		} else if name[0] == 's' {
+			params.Strings[name[1:]] = subMatches[i]
+		} else if name[0] == 'i' {
+			num, err := strconv.Atoi(subMatches[i])
+			if err != nil {
+				return nil, err
+			}
+			params.Numbers[name[1:]] = num
+		} else {
+			return nil, fmt.Errorf("unknown parse type for capture group %s", name)
+		}
 	}
 
 	return params, nil
@@ -75,40 +97,25 @@ func extractRegexp(pattern *regexp.Regexp, str string) (map[string]string, error
 
 func part1(input *scanner) int {
 	// Setup
-	count := 0
+	lineNo := 0
 	for line, ok := input.NextLine(); ok; line, ok = input.NextLine() {
 		// Parse line into components
 		parsedLine, err := extractRegexp(inputFormat, line)
 		if err != nil {
-			log.Fatalf("input line %d: %v", count, err)
+			log.Fatalf("input line %d: %v", lineNo, err)
 		}
 
 		// Process line
-		fmt.Printf("got line: %v\n", parsedLine)
-		count++
+		fmt.Printf("got line: %+v\n", parsedLine)
+		lineNo++
 	}
 	if err := input.Finish(); err != nil {
 		log.Fatal(err)
 	}
-	return count
+
+	return lineNo
 }
 
 func part2(input *scanner) int {
-	// Setup
-	count := 0
-	for line, ok := input.NextLine(); ok; line, ok = input.NextLine() {
-		// Parse line into components
-		parsedLine, err := extractRegexp(inputFormat, line)
-		if err != nil {
-			log.Fatalf("input line %d: %v", count, err)
-		}
-
-		// Process line
-		fmt.Printf("got line: %v\n", parsedLine)
-		count++
-	}
-	if err := input.Finish(); err != nil {
-		log.Fatal(err)
-	}
-	return count
+	return 0
 }
