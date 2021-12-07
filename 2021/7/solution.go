@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -112,27 +113,78 @@ func extractRegexp(pattern *regexp.Regexp, str string) (*parsedParams, error) {
 	return params, nil
 }
 
-func part1(input *scanner) int {
+func part1(input *scanner) int64 {
 	// Setup
-	lineNo := 0
+	var crabs []int64
 	for line, ok := input.NextLine(); ok; line, ok = input.NextLine() {
-		// Parse line into components
-		parsedLine, err := extractRegexp(inputFormat, line)
-		if err != nil {
-			log.Fatalf("input line %d: %v", lineNo, err)
-		}
-
-		// Process line
-		fmt.Printf("got line: %+v\n", parsedLine)
-		lineNo++
+		crabs = parseIntArrayOrDie(line)
+		break
 	}
 	if err := input.Finish(); err != nil {
 		log.Fatal(err)
 	}
 
-	return lineNo
+	minCrab := int64(999999999)
+	maxCrab := int64(-99999999)
+	for _, c := range crabs {
+		if minCrab > c {
+			minCrab = c
+		}
+		if maxCrab < c {
+			maxCrab = c
+		}
+	}
+
+	//	bestStart := int64(0)
+	bestScore := int64(9999999999999)
+	for center := minCrab; center <= maxCrab; center++ {
+		thisScore := int64(0)
+		for _, c := range crabs {
+			thisScore += int64(math.Abs(float64(c - center)))
+		}
+		if thisScore < bestScore {
+			bestScore = thisScore
+		}
+	}
+
+	return bestScore
 }
 
-func part2(input *scanner) int {
-	return 0
+func part2(input *scanner) int64 {
+	// Setup
+	var crabs []int64
+	for line, ok := input.NextLine(); ok; line, ok = input.NextLine() {
+		crabs = parseIntArrayOrDie(line)
+		break
+	}
+	if err := input.Finish(); err != nil {
+		log.Fatal(err)
+	}
+
+	minCrab := int64(999999999)
+	maxCrab := int64(-99999999)
+	for _, c := range crabs {
+		if minCrab > c {
+			minCrab = c
+		}
+		if maxCrab < c {
+			maxCrab = c
+		}
+	}
+
+	//	bestStart := int64(0)
+	bestScore := int64(9999999999999)
+	for center := minCrab; center <= maxCrab; center++ {
+		thisScore := int64(0)
+		for _, c := range crabs {
+			distance := int64(math.Abs(float64(c - center)))
+			cost := distance * (distance + 1) / 2
+			thisScore += cost
+		}
+		if thisScore < bestScore {
+			bestScore = thisScore
+		}
+	}
+
+	return bestScore
 }
