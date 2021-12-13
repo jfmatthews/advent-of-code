@@ -51,17 +51,65 @@ func getInputScanner() *scanner {
 	}
 }
 
-func main() {
-	scanner := getInputScanner()
-	fmt.Printf("Part 1 solution: %d\n", part1(scanner))
-
-	scanner = getInputScanner()
-	fmt.Printf("Part 2 solution: %d\n", part2(scanner))
-}
-
 var (
 	inputFormat = regexp.MustCompile("(?P<sCaveA>[a-zA-Z]+)-(?P<sCaveB>[a-zA-Z]+)")
 )
+
+func main() {
+	scanner := getInputScanner()
+	// Setup
+	lineNo := 0
+	caves := make(map[string]*Cave)
+	for line, ok := scanner.NextLine(); ok; line, ok = scanner.NextLine() {
+		// Parse line into components
+		parsedLine, err := extractRegexp(inputFormat, line)
+		if err != nil {
+			log.Fatalf("input line %d: %v", lineNo, err)
+		}
+
+		// Process line
+		caveA := parsedLine.Strings["CaveA"]
+		caveB := parsedLine.Strings["CaveB"]
+		if _, exists := caves[caveA]; !exists {
+			firstRune, _ := utf8.DecodeRuneInString(caveA)
+			isBig := unicode.IsUpper(firstRune)
+			log.Printf("creating cave %s (big? %t)", caveA, isBig)
+			caves[caveA] = &Cave{
+				isBig:     isBig,
+				name:      caveA,
+				neighbors: make(map[string]*Cave),
+			}
+		}
+		if _, exists := caves[caveB]; !exists {
+			firstRune, _ := utf8.DecodeRuneInString(caveB)
+			isBig := unicode.IsUpper(firstRune)
+			log.Printf("creating cave %s (big? %t)", caveB, isBig)
+			caves[caveB] = &Cave{
+				isBig:     isBig,
+				name:      caveB,
+				neighbors: make(map[string]*Cave),
+			}
+		}
+		if caveA != "end" && caveB != "start" {
+			log.Printf("path from %s to %s", caveA, caveB)
+			caves[caveA].neighbors[caveB] = caves[caveB]
+		}
+		if caveA != "start" && caveB != "end" {
+			log.Printf("path from %s to %s", caveB, caveA)
+			caves[caveB].neighbors[caveA] = caves[caveA]
+		}
+
+		lineNo++
+	}
+	if err := scanner.Finish(); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Part 1 solution: %d\n",
+		getAllPaths(caves["start"], caves["end"], map[*Cave]struct{}{}, false, 0, ""))
+	fmt.Printf("Part 2 solution: %d\n",
+		getAllPaths(caves["start"], caves["end"], map[*Cave]struct{}{}, true, 0, ""))
+}
 
 func parseIntArrayOrDie(text string) []int64 {
 	res := make([]int64, 0)
@@ -149,104 +197,4 @@ func getAllPaths(start *Cave, end *Cave, visited map[*Cave]struct{}, allowDouble
 	log.Printf("%d paths starting from %s at depth %d\n", paths, start.name, depth)
 
 	return paths
-}
-
-func part1(input *scanner) int {
-	// Setup
-	lineNo := 0
-	caves := make(map[string]*Cave)
-	for line, ok := input.NextLine(); ok; line, ok = input.NextLine() {
-		// Parse line into components
-		parsedLine, err := extractRegexp(inputFormat, line)
-		if err != nil {
-			log.Fatalf("input line %d: %v", lineNo, err)
-		}
-
-		// Process line
-		caveA := parsedLine.Strings["CaveA"]
-		caveB := parsedLine.Strings["CaveB"]
-		if _, exists := caves[caveA]; !exists {
-			firstRune, _ := utf8.DecodeRuneInString(caveA)
-			isBig := unicode.IsUpper(firstRune)
-			log.Printf("creating cave %s (big? %t)", caveA, isBig)
-			caves[caveA] = &Cave{
-				isBig:     isBig,
-				name:      caveA,
-				neighbors: make(map[string]*Cave),
-			}
-		}
-		if _, exists := caves[caveB]; !exists {
-			firstRune, _ := utf8.DecodeRuneInString(caveB)
-			isBig := unicode.IsUpper(firstRune)
-			log.Printf("creating cave %s (big? %t)", caveB, isBig)
-			caves[caveB] = &Cave{
-				isBig:     isBig,
-				name:      caveB,
-				neighbors: make(map[string]*Cave),
-			}
-		}
-		caves[caveA].neighbors[caveB] = caves[caveB]
-		caves[caveB].neighbors[caveA] = caves[caveA]
-
-		lineNo++
-	}
-	if err := input.Finish(); err != nil {
-		log.Fatal(err)
-	}
-
-	// search
-	return getAllPaths(caves["start"], caves["end"], map[*Cave]struct{}{}, false, 0, "")
-}
-
-func part2(input *scanner) int {
-	// Setup
-	lineNo := 0
-	caves := make(map[string]*Cave)
-	for line, ok := input.NextLine(); ok; line, ok = input.NextLine() {
-		// Parse line into components
-		parsedLine, err := extractRegexp(inputFormat, line)
-		if err != nil {
-			log.Fatalf("input line %d: %v", lineNo, err)
-		}
-
-		// Process line
-		caveA := parsedLine.Strings["CaveA"]
-		caveB := parsedLine.Strings["CaveB"]
-		if _, exists := caves[caveA]; !exists {
-			firstRune, _ := utf8.DecodeRuneInString(caveA)
-			isBig := unicode.IsUpper(firstRune)
-			log.Printf("creating cave %s (big? %t)", caveA, isBig)
-			caves[caveA] = &Cave{
-				isBig:     isBig,
-				name:      caveA,
-				neighbors: make(map[string]*Cave),
-			}
-		}
-		if _, exists := caves[caveB]; !exists {
-			firstRune, _ := utf8.DecodeRuneInString(caveB)
-			isBig := unicode.IsUpper(firstRune)
-			log.Printf("creating cave %s (big? %t)", caveB, isBig)
-			caves[caveB] = &Cave{
-				isBig:     isBig,
-				name:      caveB,
-				neighbors: make(map[string]*Cave),
-			}
-		}
-		if caveA != "end" && caveB != "start" {
-			log.Printf("path from %s to %s", caveA, caveB)
-			caves[caveA].neighbors[caveB] = caves[caveB]
-		}
-		if caveA != "start" && caveB != "end" {
-			log.Printf("path from %s to %s", caveB, caveA)
-			caves[caveB].neighbors[caveA] = caves[caveA]
-		}
-
-		lineNo++
-	}
-	if err := input.Finish(); err != nil {
-		log.Fatal(err)
-	}
-
-	// search
-	return getAllPaths(caves["start"], caves["end"], map[*Cave]struct{}{}, true, 0, "")
 }
