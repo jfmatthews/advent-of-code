@@ -1,8 +1,8 @@
 cc_binary(
-	name = "main",
-	deps = [
-	  "@com_google_absl//absl/memory",
-	  "@com_google_absl//absl/strings",
-	],
-	srcs = ["main.cc"],
+    name = "main",
+    srcs = ["main.cc"],
+    deps = [
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+    ],
 )
