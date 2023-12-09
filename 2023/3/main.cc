@@ -18,7 +18,7 @@ struct Component {
 
   std::vector<aoc::Point> neighbors(int height, int width) const {
     std::vector<aoc::Point> candidates;
-    candidates.reserve((right.x - left.x * 2) + 8);
+    candidates.reserve(((right.x - left.x) * 2) + 8);
 
     // up and down
     for (int x = left.x; x <= right.x; ++x) {
@@ -33,7 +33,7 @@ struct Component {
     }
 
     std::vector<aoc::Point> result;
-    for (const auto& p : candidates) {
+    for (const auto &p : candidates) {
       if (p.x >= 0 && p.x < width && p.y >= 0 && p.y < height) {
         result.push_back(p);
       }
@@ -44,7 +44,9 @@ struct Component {
 
 bool isDigit(char c) { return c >= '0' && c <= '9'; }
 
-int main(int argc, char** argv) {
+bool isSymbol(char c) { return c != '.' && !isDigit(c); }
+
+int main(int argc, char **argv) {
   if (argc != 2) {
     std::cerr << "ERROR: needs 1 arg" << std::endl;
     return 1;
@@ -94,10 +96,11 @@ int main(int argc, char** argv) {
         }
 
         // blank
-        if (line[i] == '.') continue;
+        if (line[i] == '.')
+          continue;
 
         // symbols
-        if (line[i] > ' ' && line[i] <= '/') {
+        if (isSymbol(line[i])) {
           symbols[aoc::Point{i, lineNum}] = line[i];
           //           std::cout << "found symbol at " << aoc::Point{i, lineNum}
           //                     << std::endl;
@@ -120,18 +123,35 @@ int main(int argc, char** argv) {
       lineNum++;
     }
 
-    for (const auto& c : components) {
-      for (const auto& p : c.neighbors(lineNum, width)) {
+    for (const auto &c : components) {
+      for (const auto &p : c.neighbors(lineNum, width)) {
         if (symbols.find(p) != symbols.end()) {
-          std::cout << "component at " << c.left << " has neighbor at " << p
-                    << " with symbol " << symbols.at(p) << std::endl;
+          std::cout << "component " << c.value << " at " << c.left
+                    << " has neighbor at " << p << " with symbol "
+                    << symbols.at(p) << std::endl;
           part1Total += c.value;
           break;
         }
       }
     }
-
     std::cout << "part 1: " << part1Total << std::endl;
+
+    std::map<aoc::Point, std::vector<Component>> componentsByGear;
+    for (const auto &c : components) {
+      for (const auto &p : c.neighbors(lineNum, width)) {
+        if (symbols.find(p) != symbols.end()) {
+          if (symbols.at(p) == '*') {
+            componentsByGear[p].push_back(c);
+          }
+        }
+      }
+    }
+
+    for (const auto &[p, cs] : componentsByGear) {
+      if (cs.size() == 2) {
+        part2Total += (cs[0].value * cs[1].value);
+      }
+    }
     std::cout << "part 2: " << part2Total << std::endl;
   }
 
